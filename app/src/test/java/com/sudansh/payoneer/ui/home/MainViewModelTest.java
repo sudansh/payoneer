@@ -1,48 +1,46 @@
 package com.sudansh.payoneer.ui.home;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
+import androidx.arch.core.executor.testing.InstantTaskExecutorRule;
 
 import com.sudansh.payoneer.data.models.PaymentResponse;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import retrofit2.Call;
 import retrofit2.Callback;
-import retrofit2.Response;
 
 @RunWith(MockitoJUnitRunner.class)
 public class MainViewModelTest {
+    @Rule
+    public InstantTaskExecutorRule instantExecutorRule = new InstantTaskExecutorRule();
 
     private final PaymentRepository repo = Mockito.mock(PaymentRepository.class);
     private MainViewModel viewModel;
 
+    @Mock
+    Call<PaymentResponse> apiCall;
+
     @Before
     public void setup() {
         viewModel = new MainViewModel(repo);
+        when(repo.getPaymentOptions()).thenReturn(apiCall);
     }
 
     @Test
     public void testSuccessResponse() {
-        Call<PaymentResponse> mockedCall = Mockito.mock(Call.class);
-        PaymentResponse response = new PaymentResponse();
-        Mockito.when(repo.getPaymentOptions()).thenReturn(mockedCall);
-
-        Mockito.doAnswer(invocation -> {
-            Callback<PaymentResponse> callback = invocation.getArgument(0, Callback.class);
-
-            callback.onResponse(mockedCall, Response.success(response));
-            return null;
-        }).when(mockedCall).enqueue(any(Callback.class));
-
-        // inject mocked ApiInterface to your presenter
-        // and then mock view and verify calls (and eventually use ArgumentCaptor to access call parameters)
-
         viewModel.getPayments();
+        ArgumentCaptor<Callback<PaymentResponse>> argumentCaptor = ArgumentCaptor.forClass(Callback.class);
 
-        Mockito.verify(viewModel.paymentResponse.getValue().data, mockedCall);
+        Mockito.verify(apiCall).enqueue(argumentCaptor.capture());
+
     }
 }
